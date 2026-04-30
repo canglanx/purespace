@@ -14,7 +14,10 @@ MANIFEST
 .idea/
 .vscode/
 .venv/
+.ruff_cache/
+
 .env
 
 logs/
 *.log
+temp/
