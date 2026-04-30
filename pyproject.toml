@@ -3,8 +3,11 @@ name = "purespace"
 version = "0.1.0"
 description = "PureSpace: A Benchmark for Abstract Spatial Reasoning in Vision-Language Models"
 readme = "README.md"
-requires-python = ">=3.12"
-dependencies = []
+requires-python = ">=3.11"
+dependencies = [
+    "bpy>=5.0.1",
+    "opencv-python>=4.11.0.86",
+]
 
 [build-system]
 requires = ["hatchling"]
