@@ -1,13 +1,13 @@
 # pyright: reportMissingImports=false, reportAttributeAccessIssue=false
 
-import bpy
 import logging
 import math
+import os
+from typing import Any, Dict, List, Tuple
+
+import bpy
 import mathutils
 import numpy as np
-import os
-
-from typing import List, Tuple, Dict, Any
 
 
 logger = logging.getLogger(__name__)

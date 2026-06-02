@@ -1,8 +1,8 @@
+import os
+from typing import List, Dict
+
 import cv2
 import numpy as np
-import os
-
-from typing import List, Dict
 
 
 line_detector = cv2.createLineSegmentDetector()

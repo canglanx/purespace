@@ -1,0 +1,19 @@
+save_dir: "/path/to/purespace"
+enable_question_demo: false
+
+tasks:
+  - num_levels: 3
+    num_corners: [2, 2, 1]
+    num_samples: 500  # [1, 999999]
+
+  - num_levels: 3
+    num_corners: [3, 2, 2]
+    num_samples: 500
+
+  - num_levels: 4
+    num_corners: [2, 3, 2, 1]
+    num_samples: 500
+
+  - num_levels: 4
+    num_corners: [3, 2, 3, 2]
+    num_samples: 500

@@ -11,21 +11,20 @@ Blender's built-in "freestyle" can achieve similar effects, but it often
 produces rough lines and may incorrectly render edges between coplanar faces.
 """
 
-import cv2
 import logging
-import numpy as np
 import os
 import tempfile
-
 from datetime import datetime
 from pydantic import (
     BaseModel,
     Field,
     field_validator,
     model_validator,
-    ValidationInfo,
 )
 from typing import List, Literal, Self
+
+import cv2
+import numpy as np
 
 from purespace.renderer.engine import (
     build_case,
@@ -45,50 +44,66 @@ from purespace.renderer.utils import (
 logger = logging.getLogger(__name__)
 
 
-ViewType = Literal["iso", "top", "right", "front", "iso-left", "iso-right", "iso-reverse"]
+ViewType = Literal[
+    "iso", "top", "right", "front", "iso-left", "iso-right", "iso-reverse"
+]
 
 
 class RenderParams(BaseModel):
-    is_strict: bool = Field(..., exclude=True)
     heights: List[int]
     corners: List[List[List[int]]]
     view: ViewType
     size: int = Field(..., ge=128, le=1024)
+    is_strict: bool
 
     @field_validator("heights")
     @classmethod
-    def validate_heights(
-        cls, values: List[int], info: ValidationInfo
-    ) -> List[int]:
-        # --- Common constraints ---
+    def validate_heights(cls, values: List[int]) -> List[int]:
         if not values:
             raise ValueError("'heights' cannot be empty")
         for h in values:
             if h <= 0:
-                raise ValueError(f"'heights' must be greater than 0, got {h}")
-        if not info.data.get("is_strict", True):
-            return values
-        # --- Strict constraints ---
-        for h in values:
-            if not (4 <= h <= 20):
-                raise ValueError(f"'heights' must be between 4 and 20, got {h}")
-        sum_values = sum(values)
-        if sum_values != 20:
-            raise ValueError(f"sum of 'heights' must be exactly 20, got {sum_values}")
+                raise ValueError(
+                    f"'heights' must be greater than 0, got {h}"
+                )
         return values
 
     @field_validator("corners")
     @classmethod
     def validate_corners(
-        cls, values: List[List[List[int]]], info: ValidationInfo
+        cls, values: List[List[List[int]]]
     ) -> List[List[List[int]]]:
-        # --- Common constraints ---
         if not values:
             raise ValueError("'corners' cannot be empty")
-        if not info.data.get("is_strict", True):
-            return values
-        # --- Strict constraints ---
         for level in values:
+            if not level:
+                raise ValueError("'corners' level cannot be empty")
+            for pt in level:
+                if len(pt) != 2:
+                    raise ValueError(f"'corners' must contain x and y, got {pt}")
+                if pt[0] <= 0 or pt[1] <= 0:
+                    raise ValueError(
+                        f"'corners' x and y must be greater than 0, got {pt}"
+                    )
+        return values
+
+    @model_validator(mode="after")
+    def validate_model(self) -> Self:
+        # --- Common constraints ---
+        if len(self.heights) != len(self.corners):
+            raise ValueError("'heights' and 'corners' must have the same length")
+        if not self.is_strict:
+            return self
+        # --- Strict constraints ---
+        for h in self.heights:
+            if not (4 <= h <= 20):
+                raise ValueError(f"'heights' must be between 4 and 20, got {h}")
+        sum_heights = sum(self.heights)
+        if sum_heights != 20:
+            raise ValueError(
+                f"sum of 'heights' must be exactly 20, got {sum_heights}"
+            )
+        for level in self.corners:
             for pt in level:
                 if not (4 <= pt[0] <= 20) or not (4 <= pt[1] <= 20):
                     raise ValueError(
@@ -107,12 +122,6 @@ class RenderParams(BaseModel):
                     raise ValueError(
                         f"'corners' y must decrease by >= 4, got {y_curr} -> {y_next}"
                     )
-        return values
-
-    @model_validator(mode="after")
-    def validate_num_levels(self) -> Self:
-        if len(self.heights) != len(self.corners):
-            raise ValueError("'heights' and 'corners' must have the same length")
         return self
 
 
@@ -134,11 +143,11 @@ class Renderer():
             shape=(size, size), dtype=np.uint8.
         """
         params = RenderParams(
-            is_strict=is_strict,
             heights=heights,
             corners=corners,
             view=view,
             size=size,
+            is_strict=is_strict,
         )
         return self._render(params)
 
@@ -196,10 +205,11 @@ if __name__ == "__main__":
         "num_levels": 3,
         "num_corners": [2, 3, 2],
         "ratio": [0.7, 0.1, 0.2],
-        "level_heights": [8, 6, 6],
-        "level_heights_z": [8, 14, 20],
+        "heights": [8, 6, 6],
         "corners": [
-            [[16, 20], [20, 6]], [[4, 20], [11, 14], [20, 6]], [[7, 10], [16, 6]]
+            [[16, 20], [20, 6]],
+            [[4, 20], [11, 14], [20, 6]],
+            [[7, 10], [16, 6]]
         ]
     }
 
@@ -209,7 +219,7 @@ if __name__ == "__main__":
         "iso", "top", "right", "front", "iso-left", "iso-right", "iso-reverse"
     ]:
         test_params = {
-            "heights": test_params_raw["level_heights"],
+            "heights": test_params_raw["heights"],
             "corners": test_params_raw["corners"],
             "view": view,
             "size": 512,
