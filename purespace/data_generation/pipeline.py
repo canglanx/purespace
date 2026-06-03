@@ -37,7 +37,7 @@ def run_data_generation(config_dict: Dict[str, Any]) -> None:
         os.path.abspath(
             config_dict.get("save_dir", os.path.join(PROJECT_DIR, "outputs"))
         ),
-        f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+        f"purespace_run_{datetime.now().strftime('%Y%m%d%H%M%S')}",
     )
     os.makedirs(save_dir, exist_ok=True)
 
